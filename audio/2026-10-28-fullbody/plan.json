@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-28",
+  "source": "https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/hp-daily-forecast-day0.json",
+  "source_updated": "2026-10-28T13:31:03",
+  "scenes": [
+    {
+      "name": "Porto",
+      "slug": "porto",
+      "location_id": 1131200,
+      "temperature": 19,
+      "weather_code": 4,
+      "spoken_condition": "céu muito nublado",
+      "text": "Porto, céu muito nublado e máxima de dezanove graus.",
+      "image_file": "porto.png",
+      "image_prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of Porto's Ribeira and the Dom Luís I bridge over the Douro, viewed from Vila Nova de Gaia. The IPMA daily forecast for 2026-10-28 is heavily overcast sky without rain, with a maximum of 19°C. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter.",
+      "audio_file": "porto.wav",
+      "audio_duration": 4.275
+    },
+    {
+      "name": "Lisboa",
+      "slug": "lisboa",
+      "location_id": 1110600,
+      "temperature": 25,
+      "weather_code": 2,
+      "spoken_condition": "poucas nuvens",
+      "text": "Lisboa, poucas nuvens e máxima de vinte e cinco graus.",
+      "image_file": "lisboa.png",
+      "image_prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of Lisbon's Praça do Comércio and Arco da Rua Augusta, with its yellow Pombaline buildings. The IPMA daily forecast for 2026-10-28 is sunny intervals and a few clouds, with a maximum of 25°C. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter.",
+      "audio_file": "lisboa.wav",
+      "audio_duration": 4.2
+    },
+    {
+      "name": "Faro",
+      "slug": "faro",
+      "location_id": 1080500,
+      "temperature": 26,
+      "weather_code": 2,
+      "spoken_condition": "poucas nuvens",
+      "text": "Faro, poucas nuvens e máxima de vinte e seis graus.",
+      "image_file": "faro.png",
+      "image_prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of the Marina de Faro in Faro city, Algarve, with its boats, palms and waterfront. The IPMA daily forecast for 2026-10-28 is sunny intervals and a few clouds, with a maximum of 26°C. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter.",
+      "audio_file": "faro.wav",
+      "audio_duration": 3.75
+    },
+    {
+      "name": "Ponta Delgada",
+      "slug": "ponta-delgada",
+      "location_id": 3420300,
+      "temperature": 23,
+      "weather_code": 6,
+      "spoken_condition": "aguaceiros",
+      "text": "Ponta Delgada, aguaceiros e máxima de vinte e três graus.",
+      "image_file": "ponta-delgada.png",
+      "image_prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of the black-and-white Portas da Cidade in Ponta Delgada, São Miguel, Azores. The IPMA daily forecast for 2026-10-28 is cloudy sky with rain showers and wet pavement, with a maximum of 23°C. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter.",
+      "audio_file": "ponta-delgada.wav",
+      "audio_duration": 4.75
+    }
+  ]
+}

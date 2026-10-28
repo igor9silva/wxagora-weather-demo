@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-28",
+  "source_updated": "2026-10-28T13:31:03",
+  "generator": "Codex built-in image generation",
+  "scenes": [
+    {
+      "slug": "porto",
+      "file": "porto.png",
+      "temperature": 19,
+      "weather_code": 4,
+      "sha256": "4904a206d21cab53f07fbbac42f55b32aa1e0ec0719242fb8627965c21812e64",
+      "prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of Porto's Ribeira and the actual Dom Luís I bridge across the Douro, photographed from Vila Nova de Gaia. Today's IPMA forecast is very cloudy, 19°C: the sky is heavily overcast with layered clouds, soft daylight, no rain. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter."
+    },
+    {
+      "slug": "lisboa",
+      "file": "lisboa.png",
+      "temperature": 25,
+      "weather_code": 2,
+      "sha256": "6aa18c48a673e3342c25812d305f566052c3c0a977f404d9b071e15be20caa40",
+      "prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. An instantly recognizable, geographically plausible view of Lisbon's Praça do Comércio and the Arco da Rua Augusta with its real yellow Pombaline architecture. Today's IPMA forecast is partly cloudy, 25°C: mild sunny daylight with a few soft clouds. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter."
+    },
+    {
+      "slug": "faro",
+      "file": "faro.png",
+      "temperature": 26,
+      "weather_code": 2,
+      "sha256": "ba2fa36e5fed8aa184b67b672f9a7f19de884f8fb6655e2f2a6ce89c3bc44db4",
+      "prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of the Marina de Faro in Faro city, Algarve, with the marina, small boats, palms and the city's waterfront, not another Algarve town or cliffs. Today's IPMA forecast is partly cloudy, 26°C: sunny mild daylight and a few soft clouds. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter."
+    },
+    {
+      "slug": "ponta-delgada",
+      "file": "ponta-delgada.png",
+      "temperature": 23,
+      "weather_code": 6,
+      "sha256": "a3397bb2e0abba01b868b38ee2c089f028d1af870ddb271671abeb80e1d86320",
+      "prompt": "Use case: photorealistic-natural. Create a portrait-format 9:16 background plate for a Portuguese television weather forecast. A recognizable, geographically plausible view of the three black-and-white Portas da Cidade in Ponta Delgada, São Miguel, Azores, with characteristic volcanic-stone architecture. Today's IPMA forecast is showers or rain, 23°C: cloudy grey sky, light visible rain, wet pavement and gentle reflections. Natural realistic color and camera perspective. No person in the foreground, no map, no lettering, numbers, captions, graphics, logos, watermark or fake weather symbols. Leave usable open space in the lower half for a full-body presenter."
+    }
+  ]
+}

@@ -1,35 +1,36 @@
 # Portugal em viagem — WXAgora concept
 
-Independent, non-official vertical weather videos. The first two examples use a moving 2D mascot and a stylized fictional miniature. The newer example uses a synthetic human presenter with locally generated lip motion and a different archival photograph for each forecast city. The photographs are not live views and do not show the current weather.
+An independent, unofficial proof of concept for a vertical Portuguese weather video. The latest experiment combines a fictional full-body presenter with four weather-specific city backgrounds. The presenter is generated locally as moving video conditioned on locally generated speech; the city images are created with Codex's built-in image-generation tool using that day's forecast. They are AI visualizations, not photographs or live views.
 
-![Preview of the human-presenter weather video](human-preview.png)
+![Full-body presenter preview](fullbody-preview.png)
 
-| Video | Forecast date | Duration |
+| Example | Forecast date | Approach |
 | --- | --- | --- |
-| [28 October video](01-28-outubro.mp4) | 28 October 2026 | 15.3 s |
-| [29 October video](02-29-outubro.mp4) | 29 October 2026 | 15.5 s |
-| [Human presenter, 28 October](03-human-presenter-2026-10-28.mp4) | 28 October 2026 | 15.3 s |
+| [Full-body presenter](04-full-body-2026-10-28.mp4) | 28 October 2026 | Audio-conditioned local video; forecast-specific generated city images |
+| [Earlier talking-photo experiment](03-human-presenter-2026-10-28.mp4) | 28 October 2026 | Older mouth-only animation with archival city photographs |
+| [Illustrated video: 28 October](01-28-outubro.mp4) | 28 October 2026 | Moving 2D mascot and fictional miniature |
+| [Illustrated video: 29 October](02-29-outubro.mp4) | 29 October 2026 | Moving 2D mascot and fictional miniature |
 
-The dates and weather data are saved snapshots, not a live forecast. City names, daily maximum temperatures and weather descriptions are read from `forecasts/ipma-day0.json` and `forecasts/ipma-day1.json`. Both snapshots report IPMA's source update timestamp `2026-10-28T11:31:03`. The JSON is formatted for readability, and the city and weather-type reference tables are included as well.
+The full-body example uses an [IPMA snapshot](forecasts/ipma-human-2026-10-28.json) updated at `2026-10-28T13:31:03`: Porto 19°C and heavily cloudy, Lisboa 25°C and partly cloudy, Faro 26°C and partly cloudy, and Ponta Delgada 23°C with showers or rain. These are daily forecasts, not reports of current observed conditions. Generated scenes may not precisely reproduce the real locations or weather.
 
-The human-presenter video uses its separately saved [IPMA snapshot](forecasts/ipma-human-2026-10-28.json), updated at `2026-10-28T13:31:03`.
+Source: [IPMA API](https://api.ipma.pt/). IPMA's API terms require attribution and limit free reuse to non-profit purposes; check the current terms and appropriate licence before commercial use. This demonstration is not affiliated with WXAgora or IPMA.
 
-Source: [IPMA API](https://api.ipma.pt/). The API's terms require attribution and limit free reuse to non-profit purposes. Check the current terms and appropriate licence before commercial use. This demonstration is not affiliated with WXAgora or IPMA.
+## Full-body experiment
 
-## How it was made
+- Speech is generated locally with `tts_eu_pt` 0.1.1, a Kokoro-82M model fine-tuned for European Portuguese. The narration and input plan for the sample are in [audio/2026-10-28-fullbody](audio/2026-10-28-fullbody/). No macOS system voice was used.
+- The presenter is a fictional, generated full-body image animated locally with the experimental audio-to-video mode of [ltx-2-mlx](https://github.com/dgrauet/ltx-2-mlx) and LTX-2.3 weights. The voice track used to condition the model is included in the final composite.
+- Four separate background images were made with Codex's built-in image tool, using the day's conditions and recognizable city landmarks. The [image manifest](assets/generated/2026-10-28/manifest.json) contains the exact prompts, forecast codes and image hashes; the presenter prompt is in [FULL-BODY.md](FULL-BODY.md).
+- The video uses compact top-corner weather graphics and no image-credit footer. City backgrounds and presenter are composited with FFmpeg at 720 × 1280 and 24 fps.
 
-- Portrait video: 720 × 1280, 24 fps, H.264/AAC, rendered locally with Python, Pillow and FFmpeg.
-- Voice: `tts_eu_pt` 0.1.1, a Kokoro-82M model fine-tuned for European Portuguese, running locally on the Mac CPU. The original examples' clips and their exact text are in `audio/`; the daily presenter command creates fresh clips for its forecast. No macOS system voice was used in the videos.
-- The short background music and transition sounds are synthesized by `render.py` from mathematical waveforms. No music catalogue or paid audio service was used.
-- The older videos' illustrated landscape and mascot are one-time bitmap assets generated using Codex's built-in image-generation tool. Their prompts are in `ART-PROMPTS.md`. The human-presenter video uses archival photographs instead; their sources, creators and licences are listed in `THIRD-PARTY.md` and in the video. The media are composited locally; no video-generation API was used.
+See [FULL-BODY.md](FULL-BODY.md) for setup and the complete manual pipeline. [DAILY-TASK.md](DAILY-TASK.md) describes a repeatable Codex task for fetching each day's forecast, generating new images, producing speech and rendering locally. This is not an installed or unattended daily schedule. The selected video and text-encoder weights require approximately 29 GB of one-time downloads; a short scene took roughly four minutes on the tested 32 GB M5 MacBook Pro. No metered voice or video API was used. Codex image generation, hardware, electricity and other costs are not accounted for as zero.
 
-There was no metered voice or video-generation API charge for these renders. This does not establish a total cost for development, Codex/image-generation usage, electricity, hardware, data licensing or distribution. The voice model needs an approximately 313 MB one-time download if it is not already cached.
+The video model is experimental. Review the result, especially pronunciation, gestures and speech-to-mouth synchronization, before publishing. There is no automatic social-media posting. This is a proof of concept with four fixed cities, no automatic warning handling and no monitoring; Ponta Delgada represents that city's forecast, not the entire Azores.
 
-On this Mac the final video-compositing passes took approximately 6.5 and 6.0 seconds respectively. Generating the eight voice clips for both videos took about 22 seconds in one process, including model startup. These measurements exclude asset creation, initial downloads and data fetching.
+## Earlier examples
 
-A local speech recognizer recovered the temperatures but inconsistently transcribed the name “Ponta Delgada.” The voice and place-name pronunciation need a human listening review before publication.
+The older illustrated examples use saved day-0/day-1 IPMA snapshots and locally generated Kokoro speech. Their short music and transition sounds are synthesized by `render.py`; the older illustrated assets' prompts are in [ART-PROMPTS.md](ART-PROMPTS.md). The talking-photo example uses separate archival photographs; their sources and licences are in [THIRD-PARTY.md](THIRD-PARTY.md).
 
-## Render the saved examples again
+## Legacy: render the illustrated examples again
 
 On a Mac with Python 3.11 and FFmpeg installed:
 
@@ -60,9 +61,9 @@ On first voice synthesis, the model is downloaded from [logus2k/kokoro_tts_eu_pt
 
 This is a proof of concept rather than a production weather system: it has four fixed locations, a finite set of weather descriptions, no automatic warning handling, no publishing scheduler, and no monitoring. IPMA's update timestamp and forecast data should be reviewed before publication. The island scene shows the forecast for Ponta Delgada, not every location in the Azores.
 
-## Local human presenter
+## Legacy: talking-photo prototype
 
-`human_presenter.py` generates a forecast with a realistic-looking, lip-synced presenter. It uses the same Kokoro voice and the [MuseTalk 1.5 MLX port](https://github.com/xocialize/musetalk-mlx) on the Mac's GPU. The presenter image is replaceable: give `--portrait` a front-facing, well-lit image of a person whose likeness you have permission to animate. The included example is a synthetic, fictional person; see [THIRD-PARTY.md](THIRD-PARTY.md) for its source and licence.
+`human_presenter.py` is an earlier talking-photo experiment and is retained for reference. It uses the same Kokoro voice and the [MuseTalk 1.5 MLX port](https://github.com/xocialize/musetalk-mlx) on the Mac's GPU. The presenter image is replaceable: give `--portrait` a front-facing, well-lit image of a person whose likeness you have permission to animate. The included example is a synthetic, fictional person; see [THIRD-PARTY.md](THIRD-PARTY.md) for its source and licence.
 
 ![Preview of the synthetic human presenter](human-preview.png)
 
