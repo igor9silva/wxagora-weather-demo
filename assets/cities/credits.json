@@ -1,0 +1,46 @@
+[
+  {
+    "city": "PORTO",
+    "file": "porto.jpg",
+    "creator": "Michael Gaylard",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Panoramic_View_of_Porto%27s_Ribeira_District_and_Dom_Lu%C3%ADs_I_Bridge_(55245842707).jpg",
+    "title": "Panoramic View of Porto's Ribeira District and Dom Luís I Bridge (55245842707).jpg",
+    "changed": "cropped and resized for video",
+    "source_short": "https://commons.wikimedia.org/?curid=191808171"
+  },
+  {
+    "city": "LISBOA",
+    "file": "lisboa.jpg",
+    "creator": "Marvin Jansen",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pra%C3%A7a_do_Com%C3%A9rcio_%E2%80%93_Lisboa,_Portugal_(54817271215).jpg",
+    "title": "Praça do Comércio – Lisboa, Portugal (54817271215).jpg",
+    "changed": "cropped and resized for video",
+    "source_short": "https://commons.wikimedia.org/?curid=176048090"
+  },
+  {
+    "city": "FARO",
+    "file": "faro.jpg",
+    "creator": "Concepcion AMAT ORTA…",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:%C2%AE_FARO_MARINA_VISTAS_-_panoramio_(4).jpg",
+    "title": "® FARO MARINA VISTAS - panoramio (4).jpg",
+    "changed": "cropped and resized for video",
+    "source_short": "https://commons.wikimedia.org/?curid=54153299"
+  },
+  {
+    "city": "PONTA DELGADA",
+    "file": "ponta-delgada.jpg",
+    "creator": "David Stanley",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Portas_da_Cidade_(14759979231).jpg",
+    "title": "Portas da Cidade (14759979231).jpg",
+    "changed": "cropped and resized for video",
+    "source_short": "https://commons.wikimedia.org/?curid=96747334"
+  }
+]

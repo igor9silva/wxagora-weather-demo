@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-import os
 import subprocess
 import tempfile
 import time
@@ -21,10 +19,10 @@ from zoneinfo import ZoneInfo
 import cv2
 import numpy as np
 import soundfile as sf
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 from make_speech import PLACES, line_for
-from render import B, F, FPS, H, W, Movie, date_label, draw_logo, draw_weather_icon, ease, fit_font, short_label, text, weather_kind
+from render import B, F, FPS, H, W, Movie, date_label, draw_logo, draw_weather_icon, short_label, text, weather_kind
 
 BASE = Path(__file__).resolve().parent
 IPMA_URL = 'https://api.ipma.pt/open-data/forecast/meteorology/cities/daily/hp-daily-forecast-day0.json'
@@ -72,18 +70,39 @@ def generate_speech(data, outdir):
 
 
 def load_photo(path):
+    import mediapipe as mp
+
     image=cv2.imread(str(path),cv2.IMREAD_UNCHANGED)
     if image is None: raise ValueError(f'Cannot read portrait: {path}')
     if image.ndim!=3 or image.shape[2] not in (3,4): raise ValueError('Use an RGB/RGBA presenter photo')
     source=image[:,:,:3]
-    gray=cv2.cvtColor(source,cv2.COLOR_BGR2GRAY)
-    detector=cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
-    found=detector.detectMultiScale(gray,scaleFactor=1.08,minNeighbors=5,minSize=(60,60))
+    # MuseTalk expects a landmark-aligned crop with the nose bridge halfway
+    # down and the chin at the bottom, not a generic face-detector square.
+    with mp.solutions.face_mesh.FaceMesh(static_image_mode=True,max_num_faces=2,
+                                         refine_landmarks=False,min_detection_confidence=.5) as mesh:
+        found=mesh.process(cv2.cvtColor(source,cv2.COLOR_BGR2RGB)).multi_face_landmarks or []
     if len(found)!=1:
         raise ValueError(f'Expected one front-facing presenter; detected {len(found)} faces')
-    x,y,w,h=map(int,found[0]); margin=int(w*.12)
-    x1=max(0,x-margin); y1=max(0,y-margin); x2=min(source.shape[1],x+w+margin); y2=min(source.shape[0],y+h+margin)
+    pts=np.array([[p.x*source.shape[1],p.y*source.shape[0]] for p in found[0].landmark])
+    middle=int(pts[6,1]); y2=min(source.shape[0],int(pts[:,1].max()))
+    x1=max(0,int(pts[:,0].min())); x2=min(source.shape[1],int(pts[:,0].max()))
+    y1=max(0,2*middle-y2)
     if x2-x1<80 or y2-y1<80: raise ValueError('Detected face is too small')
+    mouth_x=(pts[61,0]+pts[291,0])/2
+    mouth_y=(pts[0,1]+pts[17,1])/2
+    mouth_width=float(np.linalg.norm(pts[61]-pts[291]))
+    if mouth_width<12 or not (x1<mouth_x<x2 and middle<mouth_y<y2):
+        raise ValueError('Could not find a suitable front-facing mouth')
+    mask=np.zeros((y2-y1,x2-x1),np.uint8)
+    rx=max(1,round(mouth_width*.70)); ry=max(1,round(mouth_width*.48))
+    cv2.ellipse(mask,(round(mouth_x-x1),round(mouth_y-y1)),(rx,ry),0,0,360,255,-1)
+    blur=max(3,int(mouth_width*.20)//2*2+1)
+    mask=cv2.GaussianBlur(mask,(blur,blur),0).astype(np.float32)[...,None]/255
+    # Never cut a blend at the boundary of the model's crop.
+    feather=min(max(2,blur//2),mask.shape[0]//4,mask.shape[1]//4)
+    ramp=np.linspace(0,1,feather,dtype=np.float32)
+    mask[:feather,:,:]*=ramp[:,None,None]; mask[-feather:,:,:]*=ramp[::-1,None,None]
+    mask[:,:feather,:]*=ramp[None,:,None]; mask[:,-feather:,:]*=ramp[None,::-1,None]
     if image.shape[2]==4:
         alpha=image[:,:,3]
     else:
@@ -104,56 +123,76 @@ def load_photo(path):
     fade=np.ones(alpha.shape[0],dtype=np.float32)
     fade[fade_start:]=np.linspace(1,0,alpha.shape[0]-fade_start,dtype=np.float32)
     alpha=(alpha.astype(np.float32)*fade[:,None]).astype(np.uint8)
-    return source,alpha,(x1,y1,x2,y2)
+    return source,alpha,(x1,y1,x2,y2),mask
 
 
-def composite_frame(movie, t, portrait, alpha, sample_credit=False):
+def load_city_assets():
+    directory=BASE/'assets'/'cities'
+    credits=json.loads((directory/'credits.json').read_text())
+    if [item['city'] for item in credits] != [name.upper() for _,name in PLACES]:
+        raise ValueError('City photo metadata does not match forecast locations')
+    images=[]
+    for entry in credits:
+        with Image.open(directory/entry['file']) as source:
+            images.append(ImageOps.fit(source.convert('RGB'),(W,480),Image.Resampling.LANCZOS).convert('RGBA'))
+    return credits,images
+
+
+def composite_frame(movie, t, portrait, alpha, cities, sample_credit=False):
     if t < movie.starts[0]:
-        idx=0; u=0.; heading=True
+        idx=0
     elif t >= movie.scene_end:
-        idx=len(movie.scenes)-1; u=movie.scenes[idx]['duration']; heading=False
+        idx=len(movie.scenes)-1
     else:
         idx=max(i for i,start in enumerate(movie.starts) if t>=start)
-        u=t-movie.starts[idx]; heading=False
     scene=movie.scenes[idx]
-    im=movie.background(idx,u,ease(u/.55) if not heading else 1)
-    movie.atmosphere(im,scene['code'],t,idx)
+    credits,photos=cities
+    im=Image.new('RGBA',(W,H),(9,27,46,255))
+    im.alpha_composite(photos[idx],(0,124))
+    base=ImageDraw.Draw(im)
+    base.rectangle((0,0,W,123),fill=(8,24,40,255))
+    # Photo credit stays on screen with the photo; it is explicitly archival.
+    base.rectangle((0,587,W,664),fill=(4,20,35,225))
+    entry=credits[idx]
+    text(base,(24,590),f"FOTO: {entry['creator']}  •  {entry['license']}  •  RECORTE",F[18],(241,247,252,255))
+    text(base,(24,613),entry['source_short'].replace('https://',''),F[18],(215,229,240,255))
+    text(base,(24,637),entry['license_url'].replace('https://',''),F[18],(215,229,240,255))
 
     # Large, human presenter: photo may be replaced by any suitable portrait.
     rgba=cv2.cvtColor(portrait,cv2.COLOR_BGR2RGBA)
     rgba[:,:,3]=alpha
     character=Image.fromarray(rgba,'RGBA')
-    width=550; height=round(width*character.height/character.width)
-    character=character.resize((width,height),Image.Resampling.BILINEAR)
-    shift=int(10*math.sin(t*1.2))
-    im.alpha_composite(character,(190+shift,590))
+    width=540; height=round(width*character.height/character.width)
+    character=character.resize((width,height),Image.Resampling.LANCZOS)
+    im.alpha_composite(character,(210,662))
 
     overlay=Image.new('RGBA',(W,H)); d=ImageDraw.Draw(overlay)
-    draw_logo(d)
-    text(d,(44,133),date_label(movie.date),B[20],(236,246,255,255),stroke=1)
-    if heading:
-        text(d,(44,210),'PORTUGAL',B[72],stroke=2)
-        text(d,(45,294),'A PREVISÃO',B[38],(255,215,101,255),stroke=1)
+    draw_logo(d,24,30)
+    text(d,(695,43),date_label(movie.date),F[18],(224,237,246,255),anchor='ra')
+    d.rounded_rectangle((22,141,225,176),radius=5,fill=(8,24,40,210))
+    text(d,(32,147),'IMAGEM DE ARQUIVO',F[18],(241,247,252,255))
+    # The forecast and presenter share a lower news-style panel while the
+    # actual photograph remains clear and recognizable above them.
+    d.rectangle((0,664,6,1135),fill=(255,202,65,255))
+    if scene['name']=='PONTA DELGADA':
+        text(d,(31,690),'PONTA',B[38]); text(d,(31,737),'DELGADA',B[38])
     else:
-        title_font=fit_font(scene['name'],620,[72,60,50,38])
-        text(d,(43,200),scene['name'],title_font,stroke=2)
-        text(d,(47,295),f"{scene['temp']}°",B[126],stroke=2)
-        text(d,(54,447),'MÁXIMA PREVISTA',B[20],(244,248,255,255),stroke=1)
-        d.rounded_rectangle((44,501,587,585),radius=24,fill=(7,34,64,210))
-        draw_weather_icon(d,weather_kind(scene['code']),89,542,t)
-        label=short_label(scene['code'])
-        text(d,(144,527),label,fit_font(label,415,[26,24,22,20,18]))
-    for j in range(4):
-        x=48+j*25
-        d.ellipse((x,1122,x+9,1131),fill=(255,211,92,255) if j==idx else (255,255,255,120))
-    source='FONTE: IPMA  •  RETRATO: LAMBDAWALKER (CC BY 4.0)' if sample_credit else 'FONTE: IPMA  •  DEMONSTRAÇÃO'
-    text(d,(44,1160),source,B[18],(247,250,255,245),stroke=1)
+        text(d,(31,720),scene['name'],B[38])
+    text(d,(28,795),f"{scene['temp']}°",B[126])
+    text(d,(33,946),'MÁXIMA PREVISTA',F[18],(197,218,232,255))
+    draw_weather_icon(d,weather_kind(scene['code']),69,1015,t)
+    label=short_label(scene['code'])
+    import textwrap
+    for i,line in enumerate(textwrap.wrap(label,width=15,break_long_words=False)):
+        text(d,(31,1065+i*25),line,B[20],(238,246,251,255))
+    d.rectangle((0,1175,W,H),fill=(6,20,34,238))
+    text(d,(24,1184),'DADOS: IPMA  •  APRESENTAÇÃO E VOZ SINTÉTICAS',F[18],(242,247,251,255))
     if movie.updated:
         stamp=movie.updated.replace('T',' ')[:16]
-        text(d,(44,1192),f'Atualização da fonte: {stamp}',F[18],(235,244,255,230),stroke=1)
-    text(d,(44,1222),'APRESENTAÇÃO E VOZ SINTÉTICAS',F[18],(235,244,255,230),stroke=1)
+        text(d,(24,1209),f'Atualização IPMA: {stamp}',F[18],(215,229,240,255))
     if sample_credit:
-        text(d,(44,1248),'creativecommons.org/licenses/by/4.0',F[18],(235,244,255,230),stroke=1)
+        text(d,(24,1234),'RETRATO: LAMBDAWALKER · CC BY 4.0',F[18],(215,229,240,255))
+        text(d,(24,1257),'creativecommons.org/licenses/by/4.0',F[18],(215,229,240,255))
     im.alpha_composite(overlay)
     return im.convert('RGB')
 
@@ -165,7 +204,8 @@ def render_video(movie, photo_path, model_path, output, work, lip_fps=12, batch_
     if FPS % lip_fps:
         raise ValueError(f'Lip FPS must divide {FPS}')
     mx.set_default_device(mx.gpu)
-    source,alpha,(x1,y1,x2,y2)=load_photo(photo_path)
+    source,alpha,(x1,y1,x2,y2),mask=load_photo(photo_path)
+    cities=load_city_assets()
     sample_credit=photo_path.resolve()==(BASE/'assets/presenter-sample.png').resolve()
     crop=cv2.resize(source[y1:y2,x1:x2],(256,256),interpolation=cv2.INTER_LANCZOS4)
     speech=work/'speech.wav'; mixed=work/'mixed.wav'
@@ -178,12 +218,6 @@ def render_video(movie, photo_path, model_path, output, work, lip_fps=12, batch_
     n=int(chunks.shape[0]); subframes=FPS//lip_fps
     print(f'Animating {n} frames at {lip_fps} fps, compositing at {FPS} fps',flush=True)
 
-    mask=np.zeros((256,256),np.uint8)
-    # Keep the generated area tightly around the mouth; retaining original
-    # cheeks and jaw avoids a soft rectangular lower-face seam.
-    cv2.ellipse(mask,(128,190),(52,30),0,0,360,255,-1)
-    mask=cv2.GaussianBlur(mask,(21,21),0).astype(np.float32)/255
-    mask=cv2.resize(mask,(x2-x1,y2-y1))[...,None]
     active=[]
     for i in range(n):
         t=i/lip_fps
@@ -217,7 +251,7 @@ def render_video(movie, photo_path, model_path, output, work, lip_fps=12, batch_
                     frame[y1:y2,x1:x2]=np.clip(face*mask+base*(1-mask),0,255).astype(np.uint8)
                 for step in range(subframes):
                     t=(i*subframes+step)/FPS
-                    if t<movie.total: proc.stdin.write(composite_frame(movie,t,frame,alpha,sample_credit).tobytes())
+                    if t<movie.total: proc.stdin.write(composite_frame(movie,t,frame,alpha,cities,sample_credit).tobytes())
             if start%48==0:
                 print(f'Lip frames {end}/{n} ({time.monotonic()-started:.0f}s)',flush=True)
     finally:
@@ -237,7 +271,7 @@ def main():
     p.add_argument('--save-forecast',type=Path,help='Save a copy of the forecast used for this render')
     p.add_argument('--audio-dir',type=Path,help='Reuse existing matching speech clips instead of generating them')
     p.add_argument('--preview',type=float,help='Save a single PNG frame; requires --audio-dir')
-    p.add_argument('--lip-fps',type=int,default=12,choices=[12,24])
+    p.add_argument('--lip-fps',type=int,default=24,choices=[12,24])
     args=p.parse_args()
     if args.preview is None and not args.model: p.error('--model is required for a video render')
     if args.preview is not None and not args.audio_dir: p.error('--preview requires --audio-dir')
@@ -254,9 +288,9 @@ def main():
         if not args.audio_dir: generate_speech(data,audio_dir)
         movie=Movie(forecast,audio_dir=audio_dir)
         if args.preview is not None:
-            source,alpha,_=load_photo(args.portrait)
+            source,alpha,_,_=load_photo(args.portrait)
             sample_credit=args.portrait.resolve()==(BASE/'assets/presenter-sample.png').resolve()
-            composite_frame(movie,args.preview,source,alpha,sample_credit).save(args.output)
+            composite_frame(movie,args.preview,source,alpha,load_city_assets(),sample_credit).save(args.output)
             print(f'Wrote preview {args.output}',flush=True)
         else:
             started=time.monotonic()

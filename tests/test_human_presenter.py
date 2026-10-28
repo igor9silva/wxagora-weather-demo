@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 import soundfile as sf
 
-from human_presenter import BASE, load_photo, read_forecast
+from human_presenter import BASE, load_city_assets, load_photo, read_forecast
 from render import Movie
 
 
@@ -38,11 +38,28 @@ class PresenterChecks(unittest.TestCase):
                 Movie(altered, audio_dir=self.audio)
 
     def test_presenter_has_one_face_and_transparent_background(self):
-        image, alpha, box = load_photo(BASE / 'assets' / 'presenter-sample.png')
+        image, alpha, box, mask = load_photo(BASE / 'assets' / 'presenter-sample.png')
         self.assertEqual(image.shape[:2], alpha.shape)
         self.assertEqual(int(alpha[0, 0]), 0)
         self.assertGreater(int(alpha[180, 256]), 200)
         self.assertGreater(box[2] - box[0], 100)
+        self.assertEqual(mask.shape[:2], (box[3]-box[1], box[2]-box[0]))
+        self.assertGreater(float(mask.max()), .99)
+        self.assertEqual(float(mask[0].max()), 0)
+        self.assertEqual(float(mask[-1].max()), 0)
+        # The included portrait's mouth is near (256, 261).  A generic, much
+        # wider detector crop caused MuseTalk to render a featureless blur.
+        self.assertGreater(box[0], 145)
+        self.assertLess(box[2], 370)
+        self.assertLess(box[1], 85)
+        self.assertGreater(float(mask[261-box[1], 256-box[0], 0]), .95)
+
+    def test_each_forecast_city_has_a_distinct_credited_photo(self):
+        credits, images = load_city_assets()
+        self.assertEqual([row['city'] for row in credits], [scene['name'] for scene in Movie(self.forecast, audio_dir=self.audio).scenes])
+        self.assertEqual(len({image.tobytes() for image in images}), 4)
+        for row in credits:
+            self.assertTrue(row['creator'] and row['license_url'] and row['source'] and row['source_short'])
 
     def test_speech_track_has_silent_intro_and_audible_speech(self):
         movie = Movie(self.forecast, audio_dir=self.audio)
