@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.env.*
+.venv/
+__pycache__/
+*.py[cod]
+*.mix.wav
+rerender-*.mp4
+new-day*.mp4

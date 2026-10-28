@@ -1,0 +1,26 @@
+[
+  {
+    "place": "Porto",
+    "text": "Porto, máxima de 23 graus.",
+    "duration": 2.975,
+    "file": "00.wav"
+  },
+  {
+    "place": "Lisboa",
+    "text": "Lisboa, 26 graus.",
+    "duration": 2.35,
+    "file": "01.wav"
+  },
+  {
+    "place": "Faro",
+    "text": "Faro, 25 graus.",
+    "duration": 2.225,
+    "file": "02.wav"
+  },
+  {
+    "place": "Ponta Delgada",
+    "text": "Em São Miguel, Ponta Delgada tem vinte e dois graus e chuva forte.",
+    "duration": 4.525,
+    "file": "03.wav"
+  }
+]
