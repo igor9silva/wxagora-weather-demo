@@ -2,8 +2,13 @@
 .env
 .env.*
 .venv/
+.models/
+.cache/
+work/
 __pycache__/
 *.py[cod]
 *.mix.wav
 rerender-*.mp4
 new-day*.mp4
+human-today*.mp4
+human-today*.json

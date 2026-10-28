@@ -122,14 +122,14 @@ def date_label(date):
 
 
 class Movie:
-    def __init__(self, forecast_path):
+    def __init__(self, forecast_path, audio_dir=None):
         self.path = Path(forecast_path)
         raw = json.loads(self.path.read_text())
         byid = {int(x["globalIdLocal"]): x for x in raw["data"]}
         self.date = raw["forecastDate"]
         self.updated = raw.get("dataUpdate", "")
         self.scenes = []
-        self.audio_dir = BASE / "audio" / self.date
+        self.audio_dir = Path(audio_dir) if audio_dir else BASE / "audio" / self.date
         manifest = json.loads((self.audio_dir / "manifest.json").read_text())
         for i,(ident,name) in enumerate(PLACES):
             v = byid[ident]
@@ -299,20 +299,21 @@ class Movie:
         self.mascot_at(im,px,py,230+100*phase,4*math.sin(t*2)+15*(1-arriving)-15*(1-departing),int(255*clamp(phase+.1)))
         return im.convert("RGB")
 
-    def write_audio(self, output):
+    def write_audio(self, output, include_music=True):
         n=int(math.ceil(self.total*RATE)); audio=np.zeros(n,dtype=np.float64)
         # Original, low-volume instrumental bed: soft chords and mallet notes.
         notes=[261.63,329.63,392.00,523.25,392.00,329.63,293.66,440.00]
-        for beat in range(int(self.total/.43)+1):
-            start=int(beat*.43*RATE); length=min(int(.7*RATE),n-start)
-            if length<=0: continue
-            t=np.arange(length)/RATE
-            env=np.exp(-t*7)*(1-np.exp(-t*100))
-            frequency=notes[beat%len(notes)]
-            audio[start:start+length] += .026*env*(np.sin(2*np.pi*frequency*t)+.25*np.sin(2*np.pi*frequency*2*t))
-            if beat%2==0:
-                pulse=np.exp(-t*18)*np.sin(2*np.pi*(72*t-24*t*t))
-                audio[start:start+length] += .038*pulse
+        if include_music:
+            for beat in range(int(self.total/.43)+1):
+                start=int(beat*.43*RATE); length=min(int(.7*RATE),n-start)
+                if length<=0: continue
+                t=np.arange(length)/RATE
+                env=np.exp(-t*7)*(1-np.exp(-t*100))
+                frequency=notes[beat%len(notes)]
+                audio[start:start+length] += .026*env*(np.sin(2*np.pi*frequency*t)+.25*np.sin(2*np.pi*frequency*2*t))
+                if beat%2==0:
+                    pulse=np.exp(-t*18)*np.sin(2*np.pi*(72*t-24*t*t))
+                    audio[start:start+length] += .038*pulse
         for idx,s in enumerate(self.scenes):
             wav,sr=sf.read(self.audio_dir/s["clip"]["file"],dtype="float64")
             if sr!=RATE: raise ValueError(f"Unexpected sample rate {sr}")
@@ -323,10 +324,11 @@ class Movie:
             ncopy=min(len(wav),n-start)
             audio[start:start+ncopy]+=wav[:ncopy]
             # Subtle synthesized transition chime.
-            length=int(.35*RATE); tt=np.arange(length)/RATE
-            swoosh=np.exp(-tt*9)*np.sin(2*np.pi*(410*tt+480*tt*tt))*.025
-            p=max(0,start-int(.16*RATE)); q=min(n-p,length)
-            audio[p:p+q]+=swoosh[:q]
+            if include_music:
+                length=int(.35*RATE); tt=np.arange(length)/RATE
+                swoosh=np.exp(-tt*9)*np.sin(2*np.pi*(410*tt+480*tt*tt))*.025
+                p=max(0,start-int(.16*RATE)); q=min(n-p,length)
+                audio[p:p+q]+=swoosh[:q]
         audio=np.clip(audio,-.97,.97)
         sf.write(output,audio,RATE,subtype="PCM_16")
 
